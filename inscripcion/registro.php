@@ -846,22 +846,14 @@ $xajax->processRequests();
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
     <title>Inscríbete en el congreso!</title>
-    <link type="text/css" href="../css/eggplant/jquery-ui-1.8.20.custom.css" rel="stylesheet" />
+    <link href="../js/jqueryui/jquery-ui.css" rel="stylesheet">
     <link type="text/css" href="../css/style-4.css" rel="stylesheet" />
     <link type="text/css" href="../js/jscalendar/calendar-blue.css" rel="stylesheet" />
-    <script type="text/javascript" src="../js/jquery-1.7.2.min.js"></script>
+    <script src="../js/jqueryui/external/jquery/jquery.js"></script>
     <script type="text/javascript" src="../js/jscalendar/calendar.js"></script>
     <script type="text/javascript" src="../js/jscalendar/lang/calendar-es.js"></script>
     <script type="text/javascript" src="../js/jscalendar/calendar-setup.js"></script>
-    <script type="text/javascript" src="../js/ui/jquery.ui.core.js"></script>
-    <script type="text/javascript" src="../js/ui/jquery.ui.widget.js"></script>
-    <script type="text/javascript" src="../js/ui/jquery.ui.draggable.js"></script>
-    <script type="text/javascript" src="../js/ui/jquery.ui.resizable.js"></script>
-    <script type="text/javascript" src="../js/ui/jquery.ui.dialog.js"></script>
-    <script type="text/javascript" src="../js/ui/jquery.ui.tabs.js"></script>
-    <script type="text/javascript" src="../js/ui/jquery.effects.core.js"></script>
-    <script type="text/javascript" src="../js/ui/jquery.effects.highlight.js"></script>
-    <script type="text/javascript" src="../js/ui/jquery.effects.blind.js"></script>
+	<script src="../js/jqueryui/jquery-ui.js"></script>
     <script type="text/javascript" src="../js/jquery.Rut.min.js"></script>
     
     <?php //$xajax->printJavascript("../js/xajax"); ?>
@@ -898,9 +890,13 @@ $xajax->processRequests();
 				  type: "POST",
 				  url: "registro.php",
 				  data: {action: "save", field: $('#proyecto').serialize()},
+				  dataType: 'json',
 				  success: function(resp){
-					  //destino.html(resp);
-					  $("#txtComentarios").html(resp);
+					  if(resp.mensajes.lenght() > 0)
+					  {
+					       showMessages(resp.mensajes, $("#mensajes"));
+					  }
+					  //$("#txtComentarios").html(resp);
 				  }
 				});
                 //guardarElem($('#proyecto').serialize());
@@ -967,6 +963,28 @@ $xajax->processRequests();
 
             objeto.options[i].selected=true;
         }
+		
+		function showMessages(messages, dialog)
+		{
+			if(messages.lenght() > 0 )
+			{
+				for(var i = 0; i < messages.lenght; i++)
+				{
+					var msj = '';
+					if(messages[i].tipo == 'exito')
+					{
+						msj = "<div class='ui-state-highlight ui-corner-all'>" + messages[i].texto + "</div>";
+					}
+					else if(messages[i].tipo == 'error')
+					{
+						msj = "<div class='ui-state-error ui-corner-all'>" + messages[i].texto + "</div>";
+					}
+					dialog.append(msj);
+				}
+				
+				dialog.dialog('open');
+			}
+		}
     </script>
 </head>
 <body>
