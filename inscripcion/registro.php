@@ -892,7 +892,7 @@ $xajax->processRequests();
 				  data: {action: "save", field: $('#proyecto').serialize()},
 				  dataType: 'json',
 				  success: function(resp){
-					  if(resp.mensajes.lenght() > 0)
+					  if(resp.mensajes.length > 0)
 					  {
 					       showMessages(resp.mensajes, $("#mensajes"));
 					  }
@@ -966,18 +966,21 @@ $xajax->processRequests();
 		
 		function showMessages(messages, dialog)
 		{
-			if(messages.lenght() > 0 )
+			dialog.html("");
+			if(messages.length > 0 )
 			{
-				for(var i = 0; i < messages.lenght; i++)
+				for(var i = 0; i < messages.length; i++)
 				{
 					var msj = '';
 					if(messages[i].tipo == 'exito')
 					{
-						msj = "<div class='ui-state-highlight ui-corner-all'>" + messages[i].texto + "</div>";
+						msj = "<div class='ui-state-highlight ui-corner-all'><span class='ui-icon ui-icon-info' style='float: left; margin-right: .3em;'></span>";
+						msj += messages[i].texto + "</div>";
 					}
 					else if(messages[i].tipo == 'error')
 					{
-						msj = "<div class='ui-state-error ui-corner-all'>" + messages[i].texto + "</div>";
+						msj = "<div class='ui-state-error ui-corner-all'><span class='ui-icon ui-icon-alert' style='float: left; margin-right: .3em;'></span>";
+						msj += messages[i].texto + "</div>";
 					}
 					dialog.append(msj);
 				}
@@ -990,6 +993,7 @@ $xajax->processRequests();
 <body>
 <!-- iframe frameborder="0" scrolling="no" width="100%" height="100px" allowtransparency="yes" src="blank.html" style="z-index:100; float:none; position:absolute; display:block;"></iframe -->
 <div id="container" class="container">
+	<div id='mensajes'></div>
     <div class="pad2"></div>
     <div id="cuerpo" class="contenedor">
         <form id="proyecto" name="proyecto" onsubmit="return false;">
@@ -1000,10 +1004,10 @@ $xajax->processRequests();
             <input type="hidden" id="hdnImagen" name="hdnImagen" value="" />
             <input type="hidden" id="hdnTipo" name="hdnTipo" value="" />
             <input type="hidden" id="hdnPeso" name="hdnPeso" value="" />
-            <h1>Congreso Territorial de Jóvenes 2012 - Territorio Sur-Centro</h1>
+            <h1>Inscrpci&oacute;n Congreso Nacional de Jóvenes 2016</h1>
             <fieldset class="ui-widget ui-widget-content" id="tabs">
                 <ul>
-                    <li><a href="#tabs-1">An&iacute;mate a ser transformado!</a></li>
+                    <li><a href="#tabs-1">Vuelve al origen...</a></li>
                     <li><a href="#tabs-2">Quiero inscribirme!</a></li>
                 </ul>
                 <div id="tabs-1" style="height: auto;" class="tab">
