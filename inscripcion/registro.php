@@ -1,6 +1,4 @@
-﻿<?
-
-//session_start();
+<?php
 require_once("../conexion/class.conexionDB.inc.php");
 require_once("../lib/parametros.php");
 //require_once("../js/xajax/xajax.inc.php");
@@ -12,7 +10,17 @@ if(isset($_POST) && isset($_POST["action"]))
 		case "select":
 			echo selectDinamico($_POST["value"], $_POST["field"], '');
 			
-		break;
+			break;
+
+		case 'save':
+			header('Content-Type: application/json');
+			$post = array();
+			parse_str($_POST['field'], $post);
+			//echo print_r();
+			echo json_encode(guardarElem($post));
+
+			break;	
+
 	}
 exit(0);	
 }
@@ -494,13 +502,15 @@ function guardarElem($formulario){
     else{
         require("../lib/parametros.php");
         $flag = 0;
-        extract($formulario);
-        $respuesta = new xajaxResponse();
+	extract($formulario);
+	$mensajes = array();
+	$respuesta = array('result' => 'ok', 'mensajes' => $mensajes);
+        //$respuesta = new xajaxResponse();
         $conn = new conexionBD ( );
         $conn->SeleccionBBDD($_BASE_SIS);
         $i=0;
         $validacionDeposito = validarDeposito($txtDeposito);
-        //$respuesta->addAlert($validacionDeposito);
+ 
         if($validacionDeposito["descripcion"] == "")
         {
             $idDeposito = $validacionDeposito["deposito"];
@@ -546,16 +556,16 @@ function guardarElem($formulario){
                           '$ckbLider',
                           NOW())";
 
-            //$respuesta->addAlert($Str_SQL);
-
-            if(!@$conn->EjecutarSQL($Str_SQL)){
+             if(!@$conn->EjecutarSQL($Str_SQL)){
                 $conn->EjecutarSQL("ROLLBACK TRANSACTION A1");
                 $MSG = "<b>Ha ocurrido un error al guardar los datos</b>.<br /><br />El error fue:<br />";
                 $MSG .= $conn->ObtUltError();
                 $MSG .= "<br />En la consulta:<br /><br />$Str_SQL";
-                $respuesta->addAssign("mensajes", "innerHTML", $MSG);
-                $respuesta->addScript('$("#mensajes").dialog("open");');
-                return $respuesta;
+		$mensaje = array('tipo' => 'error', 'texto' => $MSG);
+		array_push($respuesta['mensajes'], $mensaje);
+		$respuesta['result'] = 'KO';
+
+		return $respuesta;
             }
             
             $idPersona = mysql_insert_id($conn->id);
@@ -577,8 +587,9 @@ function guardarElem($formulario){
                 $MSG = "<b>Ha ocurrido un error al guardar los datos</b>.<br /><br />El error fue:<br />";
                 $MSG .= $conn->ObtUltError();
                 $MSG .= "<br />En la consulta:<br /><br />$Str_SQL";
-                $respuesta->addAssign("mensajes", "innerHTML", $MSG);
-                $respuesta->addScript('$("#mensajes").dialog("open");');
+                $mensaje = array('tipo' => 'error', 'texto' => $MSG);
+		array_push($respuesta['mensajes'], $mensaje);
+		$respuesta['result'] = 'KO';
                 return $respuesta;
             }
             
@@ -595,21 +606,24 @@ function guardarElem($formulario){
                 $MSG = "<b>Ha ocurrido un error al guardar los datos</b>.<br /><br />El error fue:<br />";
                 $MSG .= $conn->ObtUltError();
                 $MSG .= "<br />En la consulta:<br /><br />$Str_SQL";
-                $respuesta->addAssign("mensajes", "innerHTML", $MSG);
-                $respuesta->addScript('$("#mensajes").dialog("open");');
+                $mensaje = array('tipo' => 'error', 'texto' => $MSG);
+		array_push($respuesta['mensajes'], $mensaje);
+		$respuesta['result'] = 'KO';
                 return $respuesta;
             }
 
             $conn->EjecutarSQL("COMMIT TRANSACTION A1");
             $MSG = "Datos guardados con exito";
-            $respuesta->addAssign("mensajes", "innerHTML", $MSG);
-            $respuesta->addScript('$("#mensajes").dialog("open");');
-            $respuesta->addRedirect("registrook.php?codInscripcion=$codInscripcion");
+            $mensaje = array('tipo' => 'exito', 'texto' => $MSG);
+	    array_push($respuesta['mensajes'], $mensaje);
+	    $respuesta['result'] = 'OK';
             return $respuesta;
         }
         else
-        {
-            $respuesta->addAlert($validacionDeposito);
+	{
+	    $mensaje = array('tipo' => 'error', 'texto' => $validacionDeposito['descripcion']);
+	    array_push($respuesta['mensajes'], $mensaje);
+            $respuesta['result'] = 'KO';
         }
     }
     return $respuesta;
@@ -644,7 +658,8 @@ function validarDeposito($numeroDeposito)
         $MSG = "<b>Ha ocurrido un error al guardar los datos</b>.<br /><br />El error fue:<br />";
         $MSG .= $conn->ObtUltError();
         $MSG .= "<br />En la consulta:<br /><br />$Str_SQL";
-        return $result["descripcion"] = $MSG;
+		$result["descripcion"] = $MSG;
+        return $result;
     }
 
     $contador = 0;
@@ -660,12 +675,13 @@ function validarDeposito($numeroDeposito)
             }
             else
             {
-                return $result["descripcion"] = "Este depósito ha alcanzado el número máximo de registros permitido.";
+				$result["descripcion"] = "Este depósito ha alcanzado el número máximo de registros permitido.";
+                return $result;
             }
         }
     }
-    
-    return $result["descripcion"] = "No se ha encontrado el depósito indicado.";
+    $result["descripcion"] = "No se ha encontrado el depósito indicado.";
+    return $result;
 
 }
 
@@ -878,7 +894,16 @@ $xajax->processRequests();
             });
 
             $("#btnGuardar").click(function(){
-                xajax_guardarElem(xajax.getFormValues('proyecto'));
+				$.ajax({
+				  type: "POST",
+				  url: "registro.php",
+				  data: {action: "save", field: $('#proyecto').serialize()},
+				  success: function(resp){
+					  //destino.html(resp);
+					  $("#txtComentarios").html(resp);
+				  }
+				});
+                //guardarElem($('#proyecto').serialize());
             });
 
             $(".tab").click(function(){
@@ -905,14 +930,14 @@ $xajax->processRequests();
                 on_success: function(){ xajax_guardarElem(xajax.getFormValues('proyecto')); }
             });*/
 			
-			$("#selRegion, #selProvincia, #selComuna").change(function(){
+			$("#selRegion, #selProvincia").change(function(){
 				var destino = $(this).attr("related")
 				$.ajax({
 				  type: "POST",
 				  url: "registro.php",
 				  data: {action: "select", field: $(this).attr("id"), value: $(this).val()},
 				  success: function(resp){
-					  destino.html(resp);
+					  $("#" + destino).html(resp);
 					  //$("#selProvincia").html(resp);
 				  }
 				});
@@ -1032,7 +1057,7 @@ while($rows = $conn->FetchArray($result)){
 
                     <div id="divProvincia" class="div_texbox ui-corner-all">
 
-                        <select class="selSuc select Llarge" name="selProvincia" id="selProvincia">
+                        <select class="selSuc select Llarge" related="selComuna" name="selProvincia" id="selProvincia">
 
                             <option value="">Seleccione Provincia</option>
 
