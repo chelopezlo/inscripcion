@@ -1,0 +1,5 @@
+[29-May-2012 09:38:47] PHP Parse error:  syntax error, unexpected T_VARIABLE in /home/pastoral/public_html/administracion/depositos.php on line 490
+[29-May-2012 09:39:57] PHP Parse error:  syntax error, unexpected T_VARIABLE in /home/pastoral/public_html/administracion/depositos.php on line 490
+[29-May-2012 09:40:08] PHP Parse error:  syntax error, unexpected T_VARIABLE in /home/pastoral/public_html/administracion/depositos.php on line 490
+[29-May-2012 09:42:27] PHP Warning:  mysql_fetch_array(): supplied argument is not a valid MySQL result resource in /home/pastoral/public_html/conexion/class.conexionDB.inc.php on line 40
+[29-May-2012 09:42:27] PHP Warning:  mysql_fetch_array(): supplied argument is not a valid MySQL result resource in /home/pastoral/public_html/conexion/class.conexionDB.inc.php on line 40
