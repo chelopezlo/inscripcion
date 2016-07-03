@@ -1008,7 +1008,8 @@ $xajax->processRequests();
             <fieldset class="ui-widget ui-widget-content" id="tabs">
                 <ul>
                     <li><a href="#tabs-1">Vuelve al origen...</a></li>
-                    <li><a href="#tabs-2">Quiero inscribirme!</a></li>
+                    <li><a href="#tabs-3">Registrar Dep&oacute;sito</a></li>
+					<li><a href="#tabs-2">Quiero inscribirme!</a></li>					
                 </ul>
                 <div id="tabs-1" style="height: auto;" class="tab">
                     <img src="../images/fondo.jpg"  style="display:block;margin:0 auto 0 auto;" />
@@ -1181,14 +1182,48 @@ while($rows = $conn->FetchArray($result)){
 
                 </div>
 
-                <div id="form1" class="formright">
+                <div id="form2" class="formright">
+                    <div class="clear"></div>
+                    <div class="ui-widget-content ui-corner-all ui-state-highlight" ><h1>Antes de inscribirte asegurate de realizar tu dep&oacute;sito bancario!</h1></div>
+                </div>
+				</div>
+                <div id="tabs-3" style="height: auto;" class="tab">
+                <div id="form3" class="formleft">
+                    <div class="clear"></div>
+                    <label class="label ui-corner-all" for="txtDeposito">El número de dep&oacute;sito es:</label>
+                    <div id="divDeposito" class="div_texbox ui-corner-all"><input type="text" name="txtDeposito" id="txtDeposito" class="textbox txtCodigo Llarge"/></div>                    
+                    <label class="label ui-corner-all" for="txtFechaDep">El d&iacute;a:</label>
+                    <div id="divFechaDep" class="div_texbox ui-corner-all"><input type="text" name="txtFechaDep" id="txtFechaDep" class="textbox txtFec Lmedium"/></div>
+                    <script type="text/javascript">
+                        Calendar.setup({
+                            inputField     :    "txtFechaDep",
+                            ifFormat       :    "%d/%m/%Y",
+                            button         :    "txtFechaDep",
+                            align          :    "Bc",
+                            singleClick    :    true,
+                            electric        :   false
+                        });
+                    </script>
+
+                    <label class="label ui-corner-all" for="txtMontoDep">Por el monto de:</label>
+                    <div id="divMontoDep" class="div_texbox ui-corner-all"><input type="text" name="txtMontoDep" id="txtMontoDep" class="textbox txtMoney Llarge"/></div>
+
+                    <label class="labelObs label ui-corner-all" for="txtComentarios">Observaciones:</label>
+                    <div id="divComentarios" class="div_texbox-Obs ui-corner-all"><textarea rows="3" name="txtComentarios" id="txtComentarios" class="textbox text-area txtCmt Llarge"></textarea></div>
 
                     <div class="clear"></div>
-
-                    <div class="ui-widget-content ui-corner-all ui-state-highlight" ><h1>Antes de inscribirte asegurate de realizar tu dep&oacute;sito bancario!</h1></div>
-
+                    <br />
+                    <div class="button_div ui-corner-all ui-widget-content">
+                        <button id="btnGuardar" type="button" name="btnGuardar" class="ui-corner-all button  ui-state-default"><div style="float:left" class="ui-icon ui-icon-disk"></div>Inscribeme!</button>              
+                        <button id="btnCancelar" type="button" name="btnCancelar" class="ui-corner-all button  ui-state-default"><div style="float:left" class="ui-icon ui-icon-cancel"></div>Cancelar</button>
+                    </div>
                 </div>
 
+                <div id="form4" class="formright">
+                    <div class="clear"></div>
+                    <div class="ui-widget-content ui-corner-all ui-state-highlight" ><h1>Antes de inscribirte asegurate de realizar tu dep&oacute;sito bancario!</h1></div>
+                </div>
+				</div>
             </fieldset>
 
             <!--/div-->            
