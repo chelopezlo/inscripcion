@@ -27,10 +27,8 @@ exit(0);
 
 function selectDinamico($idElemento, $tipo, $destino=''){
     require("../lib/parametros.php");
-    //$respuesta = new xajaxResponse();
     $conn = new conexionBD();
     $conn->SeleccionBBDD($_BASE_SIS);
-
     $REG = "selRegion"; $COM = "selComuna"; $PROV = "selProvincia";
 
     if($idElemento == ""){return $respuesta;}
@@ -41,85 +39,42 @@ function selectDinamico($idElemento, $tipo, $destino=''){
                     WHERE PROVINCIA_REGION_ID = $idElemento";
 
         if(!$result = @$conn->EjecutarSQL($Str_SQL)){
-
             $conn->EjecutarSQL("ROLLBACK TRANSACTION A1");
-
             $MSG = "Ha ocurrido un error al eliminar los datos.\nEl error fue:\n";
-
             $MSG .= $conn->ObtUltError();
-
             $MSG .= "En la consulta:\n\n:$Str_SQL";
-
             $respuesta->addAlert($MSG);
-
             return $respuesta;
-
         }
-
         else{
 
             $valorAAsignar = "<option value=''>Seleccione Provincia</option>";
-
             while($rows = $conn->FetchArray($result)){
-
                 $valorAAsignar .= "<option value='$rows[PROVINCIA_ID]'>$rows[PROVINCIA_NOMBRE]</option>";
-
             }
-
-            //$valorAAsignar .= "</select>";
-
             $divAAsignar = "divProvincia$destino";
-
         }
-
     }
-
     elseif($tipo == $PROV){
-
         $Str_SQL = "SELECT COMUNA_ID, COMUNA_NOMBRE
-
                     FROM comuna
-
                     WHERE COMUNA_PROVINCIA_ID = $idElemento";
-
         if(!$result = @$conn->EjecutarSQL($Str_SQL)){
-
             $conn->EjecutarSQL("ROLLBACK TRANSACTION A1");
-
             $MSG = "Ha ocurrido un error al eliminar los datos.\nEl error fue:\n";
-
             $MSG .= $conn->ObtUltError();
-
             $MSG .= "En la consulta:\n\n:$Str_SQL";
-
             $respuesta->addAlert($MSG);
-
             return $respuesta;
-
         }
-
         else{
-
             $valorAAsignar = "<option value=''>Seleccione Comuna</option>";
-
             while($rows = $conn->FetchArray($result)){
-
                 $valorAAsignar .= "<option value='$rows[COMUNA_ID]'>$rows[COMUNA_NOMBRE]</option>";
-
             }                        
-
         }
-
     }
-
-
-
-    //$respuesta->addAssign("$divAAsignar", "innerHTML", $valorAAsignar);
-
     return $valorAAsignar;
-
-
-
 }
 
 function cargarElem($idElem){
@@ -260,33 +215,8 @@ function cargarElem($idElem){
 
 }
 
-function cancelar($objXajax = ''){
-
-    if($objXajax == ''){
-
-        $respuesta = new xajaxResponse();
-
-    }
-
-    else{
-
-        $respuesta = $objXajax;
-
-    }
-
-    $respuesta->addRedirect($_SERVER['PHP_SELF']);
-
-    $respuesta->addAssign("hdnIdEmpresa", "value", $rowsENC['EMP_IDEMPRESA']);
-
-    $respuesta->addAssign("txtNombreEmp", "value", $rowsENC['EMP_NOMBRE']);
-
-    $respuesta->addAssign("txtBaseDatos", "value", $rowsENC['EMP_BASEDATOS']);
-
-    $respuesta->addAssign("hdnBaseDatos", "value", $rowsENC['EMP_BASEDATOS']);
-
-
-
-    return $respuesta;
+function cancelar()
+{
 
 }
 
@@ -511,7 +441,7 @@ function guardarElem($formulario){
         $i=0;
         $validacionDeposito = validarDeposito($txtDeposito);
  
-        if($validacionDeposito["descripcion"] == "")
+        if($validacionDeposito["deposito"] != "")
         {
             $idDeposito = $validacionDeposito["deposito"];
             $conn->EjecutarSQL("BEGIN TRANSACTION A1");
@@ -629,6 +559,105 @@ function guardarElem($formulario){
     return $respuesta;
 }
 
+function guardarDeposito($formulario)
+{
+	if($formulario['hdnIdElemento']){
+        return modificarElem($formulario);
+    }
+    else
+	{
+        require("../lib/parametros.php");
+        $flag = 0;
+		extract($formulario);
+		$mensajes = array();
+		$respuesta = array('result' => 'ok', 'mensajes' => $mensajes);
+        $conn = new conexionBD ( );
+        $conn->SeleccionBBDD($_BASE_SIS);
+        $i=0;
+        $validacionDeposito = validarDeposito($txtDeposito);
+ 
+        if($validacionDeposito["deposito"] == "")
+        {           
+            
+            if($txtFechaDep == ''){$txtFechaDep = "NULL";}
+            else{
+                $fecaux = split("/", $txtFechaDep);
+                $fechaIni = date("Y-m-d", mktime(0,0,0, $fecaux[1], $fecaux[0], $fecaux[2]));
+                $txtFechaDep = "'$fechaIni'";
+            }
+			
+			$cantidadRegistros = calcularInscripciones($txtMontoDep, $fechaIni)
+
+			if($cantidadRegistros == 0)
+			{
+				$MSG = "El monto ingresado no es suficiente para cubrir una inscripci&oacute;n";
+				$mensaje = array('tipo' => 'error', 'texto' => $MSG);
+				array_push($respuesta['mensajes'], $mensaje);
+				$respuesta['result'] = 'KO';
+				return $respuesta;
+			}
+			
+			$conn->EjecutarSQL("BEGIN TRANSACTION A1");
+            $Str_SQL = "
+                        INSERT INTO deposito (
+							DEP_NUMERO_DEPOSITO, 
+							DEP_FECHA_DEPOSITO, 
+							DEP_MONTO_DEPOSITO, 
+							DEP_CANTIDAD_REGISTROS, 
+							DEP_CANTIDAD_OCUPADOS, 
+							DEP_OBSERVACIONES) 
+						VALUES (
+                          '$txtDeposito',                          
+                          $txtFechaDep,
+                          '$txtMontoDep',
+                          '$cantidadRegistros',
+                          '0',
+                          '$txtComentariosDep'
+                          )";
+
+             if(!@$conn->EjecutarSQL($Str_SQL)){
+                $conn->EjecutarSQL("ROLLBACK TRANSACTION A1");
+                $MSG = "<b>Ha ocurrido un error al guardar los datos</b>.<br /><br />El error fue:<br />";
+                $MSG .= $conn->ObtUltError();
+                $MSG .= "<br />En la consulta:<br /><br />$Str_SQL";
+				$mensaje = array('tipo' => 'error', 'texto' => $MSG);
+				array_push($respuesta['mensajes'], $mensaje);
+				$respuesta['result'] = 'KO';
+
+				return $respuesta;
+			}          
+            
+            $conn->EjecutarSQL("COMMIT TRANSACTION A1");
+            $MSG = "Datos guardados con exito";
+            $mensaje = array('tipo' => 'exito', 'texto' => $MSG);
+			array_push($respuesta['mensajes'], $mensaje);
+			$respuesta['result'] = 'OK';
+            return $respuesta;
+        }
+        else
+		{
+			$mensaje = array('tipo' => 'error', 'texto' => 'El dep&oacute;sito ingresado ya existe.<br/>Descripci&oacute;n:' + $validacionDeposito['descripcion']);
+			array_push($respuesta['mensajes'], $mensaje);
+            $respuesta['result'] = 'KO';
+        }
+    }
+    return $respuesta;
+}
+
+function calcularInscripciones($montoDep, $fechaDep)
+{
+	require("../lib/parametros.php");
+	foreach($_VALOR_INSCRIPCION as $monto)
+	{
+		if($monto['fecha_desde'] < $fechaDep && $monto['fecha_hasta'] >= $fechaDep)
+		{
+			$cant = $montoDep / $monto['monto'];
+			return round($cant, 0, PHP_ROUND_HALF_DOWN);
+		}		
+	}
+	return 0;
+}
+
 function validarDeposito($numeroDeposito)
 {
     require("../lib/parametros.php");
@@ -671,6 +700,7 @@ function validarDeposito($numeroDeposito)
             {
                 $result["deposito"] = $rowsENC['DEP_ID_DEPOSITO'];
                 $result["numeroInscripciones"] = $rowsENC['DEP_CANTIDAD_OCUPADOS'];
+				$result["descripcion"] = $rowsENC['DEP_OBSERVACIONES'];
                 return $result;
             }
             else
@@ -685,7 +715,8 @@ function validarDeposito($numeroDeposito)
 
 }
 
-function buscarElem($formulario){
+function buscarElem($formulario)
+{
 
     require("../lib/parametros.php");
 
@@ -811,33 +842,6 @@ function buscarElem($formulario){
     return $respuesta;
 
 }
-
-
-
-
-/*
-$xajax=new xajax();
-
-
-
-$xajax->setCharEncoding("iso-8859-1");
-
-$xajax->decodeUTF8InputOn();
-
-$xajax->registerFunction("modificarElem");
-
-$xajax->registerFunction("guardarElem");
-
-$xajax->registerFunction("cancelar");
-
-$xajax->registerFunction("selectDinamico");
-
-$xajax->registerFunction("cargarElem");
-
-$xajax->processRequests();
-*/
-
-
 ?>
 
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
@@ -855,9 +859,7 @@ $xajax->processRequests();
     <script type="text/javascript" src="../js/jscalendar/calendar-setup.js"></script>
 	<script src="../js/jqueryui/jquery-ui.js"></script>
     <script type="text/javascript" src="../js/jquery.Rut.min.js"></script>
-    
-    <?php //$xajax->printJavascript("../js/xajax"); ?>
-    
+
     <script type="text/javascript">
         $(document).ready(function(){
             $("#mensajes").dialog({
@@ -896,10 +898,8 @@ $xajax->processRequests();
 					  {
 					       showMessages(resp.mensajes, $("#mensajes"));
 					  }
-					  //$("#txtComentarios").html(resp);
 				  }
 				});
-                //guardarElem($('#proyecto').serialize());
             });
 
             $(".tab").click(function(){
@@ -1208,20 +1208,20 @@ while($rows = $conn->FetchArray($result)){
                     <label class="label ui-corner-all" for="txtMontoDep">Por el monto de:</label>
                     <div id="divMontoDep" class="div_texbox ui-corner-all"><input type="text" name="txtMontoDep" id="txtMontoDep" class="textbox txtMoney Llarge"/></div>
 
-                    <label class="labelObs label ui-corner-all" for="txtComentarios">Observaciones:</label>
-                    <div id="divComentarios" class="div_texbox-Obs ui-corner-all"><textarea rows="3" name="txtComentarios" id="txtComentarios" class="textbox text-area txtCmt Llarge"></textarea></div>
+                    <label class="labelObs label ui-corner-all" for="txtComentariosDep">Observaciones:</label>
+                    <div id="divComentariosDep" class="div_texbox-Obs ui-corner-all"><textarea rows="3" name="txtComentariosDep" id="txtComentariosDep" class="textbox text-area txtCmt Llarge"></textarea></div>
 
                     <div class="clear"></div>
                     <br />
                     <div class="button_div ui-corner-all ui-widget-content">
-                        <button id="btnGuardar" type="button" name="btnGuardar" class="ui-corner-all button  ui-state-default"><div style="float:left" class="ui-icon ui-icon-disk"></div>Inscribeme!</button>              
-                        <button id="btnCancelar" type="button" name="btnCancelar" class="ui-corner-all button  ui-state-default"><div style="float:left" class="ui-icon ui-icon-cancel"></div>Cancelar</button>
+                        <button id="btnGuardarDep" type="button" name="btnGuardarDep" class="ui-corner-all button  ui-state-default"><div style="float:left" class="ui-icon ui-icon-disk"></div>Guardar</button>              
+                        <button id="btnCancelarDep" type="button" name="btnCancelarDep" class="ui-corner-all button  ui-state-default"><div style="float:left" class="ui-icon ui-icon-cancel"></div>Cancelar</button>
                     </div>
                 </div>
 
                 <div id="form4" class="formright">
                     <div class="clear"></div>
-                    <div class="ui-widget-content ui-corner-all ui-state-highlight" ><h1>Antes de inscribirte asegurate de realizar tu dep&oacute;sito bancario!</h1></div>
+                    <div class="ui-widget-content ui-corner-all ui-state-highlight" ><h1>Una vez ingresado tu dep&oacute;sito, puedes registrar a quienes participarán!</h1></div>
                 </div>
 				</div>
             </fieldset>

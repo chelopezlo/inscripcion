@@ -26,5 +26,5 @@ $_VAL_CASADO = 2;
 $_VAL_VIUDO = 3;
 $_VAL_SEPARADO = 4;
 $_VAL_DIVORCIADO = 5;
-$_VAL_ESTCIVIL = array(1 => "SOLTERO/A", 2 => "CASADO/A", 3 => "VIUDO/A", 4 => "SEPARADO/A", 5 => "DIVORCIADO/A");
+$_VAL_ESTCIVIL = array(1 => "SOLTERO/A", 2 => "CASADO/A", 3 => "VIUDO/A", 4 => "SEPARADO/A", 5 => "DIVORCIADO/A");$_VALOR_INSCRIPCION = array();array_push($_VALOR_INSCRIPCION, array('monto' => 20000, 'fecha_desde' => date_create('2016-06-05'), 'fecha_hasta' => date_create('2016-07-05') ));array_push($_VALOR_INSCRIPCION, array('monto' => 22000, 'fecha_desde' => date_create('2016-07-06'), 'fecha_hasta' => date_create('2016-08-06') ));array_push($_VALOR_INSCRIPCION, array('monto' => 25000, 'fecha_desde' => date_create('2016-08-07'), 'fecha_hasta' => date_create('2016-10-17') ));
 ?>
