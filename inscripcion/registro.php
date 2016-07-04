@@ -16,11 +16,39 @@ if(isset($_POST) && isset($_POST["action"]))
 			header('Content-Type: application/json');
 			$post = array();
 			parse_str($_POST['field'], $post);
-			//echo print_r();
 			echo json_encode(guardarElem($post));
 
-			break;	
+			break;
+			
+		case 'saveDep':
+			header('Content-Type: application/json');
+			$post = array();
+			parse_str($_POST['field'], $post);
+			echo json_encode(guardarDeposito($post));
 
+			break;	
+			
+		case 'test':
+			header('Content-Type: application/json');
+			require("../lib/parametros.php");
+			$post = array();
+			parse_str($_POST['field'], $post);
+			extract($post);
+			$fechaDep = date_create_from_format('d/m/Y', $txtFechaDep);
+			$fecaux = split("/", $txtFechaDep);
+			$fechaIni = date("Y-m-d", mktime(0,0,0, $fecaux[1], $fecaux[0], $fecaux[2]));
+			$count = 0;
+			foreach($_VALOR_INSCRIPCION as $monto)
+			{
+				$count ++;
+				if($monto['fecha_desde'] < $fechaDep && $monto['fecha_hasta'] >= $fechaDep)
+				{
+					$cant = $txtMontoDep / $monto['monto'];
+					echo json_encode(array('monto' => $monto['monto'], 'val' => floor($cant), 'fecha' =>$fechaDep));
+				}		
+			}
+			echo json_encode(array('fecha' => $fechaDep));
+			break;
 	}
 exit(0);	
 }
@@ -432,10 +460,9 @@ function guardarElem($formulario){
     else{
         require("../lib/parametros.php");
         $flag = 0;
-	extract($formulario);
-	$mensajes = array();
-	$respuesta = array('result' => 'ok', 'mensajes' => $mensajes);
-        //$respuesta = new xajaxResponse();
+		extract($formulario);
+		$mensajes = array();
+		$respuesta = array('result' => 'ok', 'mensajes' => $mensajes);
         $conn = new conexionBD ( );
         $conn->SeleccionBBDD($_BASE_SIS);
         $i=0;
@@ -551,7 +578,7 @@ function guardarElem($formulario){
         }
         else
 	{
-	    $mensaje = array('tipo' => 'error', 'texto' => $validacionDeposito['descripcion']);
+	    $mensaje = array('tipo' => 'error', 'texto' => $validacionDeposito['mensaje']);
 	    array_push($respuesta['mensajes'], $mensaje);
             $respuesta['result'] = 'KO';
         }
@@ -570,7 +597,7 @@ function guardarDeposito($formulario)
         $flag = 0;
 		extract($formulario);
 		$mensajes = array();
-		$respuesta = array('result' => 'ok', 'mensajes' => $mensajes);
+		$respuesta = array('result' => 'OK', 'mensajes' => $mensajes);
         $conn = new conexionBD ( );
         $conn->SeleccionBBDD($_BASE_SIS);
         $i=0;
@@ -578,15 +605,14 @@ function guardarDeposito($formulario)
  
         if($validacionDeposito["deposito"] == "")
         {           
+            $cantidadRegistros = calcularInscripciones($txtMontoDep, date_create_from_format('d/m/Y', $txtFechaDep));
             
-            if($txtFechaDep == ''){$txtFechaDep = "NULL";}
+			if($txtFechaDep == ''){$txtFechaDep = "NULL";}
             else{
                 $fecaux = split("/", $txtFechaDep);
                 $fechaIni = date("Y-m-d", mktime(0,0,0, $fecaux[1], $fecaux[0], $fecaux[2]));
                 $txtFechaDep = "'$fechaIni'";
             }
-			
-			$cantidadRegistros = calcularInscripciones($txtMontoDep, $fechaIni)
 
 			if($cantidadRegistros == 0)
 			{
@@ -628,7 +654,8 @@ function guardarDeposito($formulario)
 			}          
             
             $conn->EjecutarSQL("COMMIT TRANSACTION A1");
-            $MSG = "Datos guardados con exito";
+            $MSG = "Datos guardados con exito<br/>Con este dep&oacute;sito puedes inscribir a $cantidadRegistros participante(s). ";
+			
             $mensaje = array('tipo' => 'exito', 'texto' => $MSG);
 			array_push($respuesta['mensajes'], $mensaje);
 			$respuesta['result'] = 'OK';
@@ -636,7 +663,8 @@ function guardarDeposito($formulario)
         }
         else
 		{
-			$mensaje = array('tipo' => 'error', 'texto' => 'El dep&oacute;sito ingresado ya existe.<br/>Descripci&oacute;n:' + $validacionDeposito['descripcion']);
+			$desc = $validacionDeposito['descripcion'];
+			$mensaje = array('tipo' => 'error', 'texto' => "El dep&oacute;sito ingresado ya existe.<br/>Descripci&oacute;n: $desc");
 			array_push($respuesta['mensajes'], $mensaje);
             $respuesta['result'] = 'KO';
         }
@@ -652,7 +680,7 @@ function calcularInscripciones($montoDep, $fechaDep)
 		if($monto['fecha_desde'] < $fechaDep && $monto['fecha_hasta'] >= $fechaDep)
 		{
 			$cant = $montoDep / $monto['monto'];
-			return round($cant, 0, PHP_ROUND_HALF_DOWN);
+			return floor($cant);
 		}		
 	}
 	return 0;
@@ -687,7 +715,7 @@ function validarDeposito($numeroDeposito)
         $MSG = "<b>Ha ocurrido un error al guardar los datos</b>.<br /><br />El error fue:<br />";
         $MSG .= $conn->ObtUltError();
         $MSG .= "<br />En la consulta:<br /><br />$Str_SQL";
-		$result["descripcion"] = $MSG;
+		$result["mensaje"] = $MSG;
         return $result;
     }
 
@@ -705,12 +733,15 @@ function validarDeposito($numeroDeposito)
             }
             else
             {
-				$result["descripcion"] = "Este depósito ha alcanzado el número máximo de registros permitido.";
+				$result["deposito"] = $rowsENC['DEP_ID_DEPOSITO'];
+                $result["numeroInscripciones"] = $rowsENC['DEP_CANTIDAD_OCUPADOS'];
+				$result["descripcion"] = $rowsENC['DEP_OBSERVACIONES'];
+				$result["mensaje"] = "Este depósito ha alcanzado el número máximo de registros permitido.";
                 return $result;
             }
         }
     }
-    $result["descripcion"] = "No se ha encontrado el depósito indicado.";
+    $result["mensaje"] = "No se ha encontrado el depósito indicado.";
     return $result;
 
 }
@@ -892,6 +923,21 @@ function buscarElem($formulario)
 				  type: "POST",
 				  url: "registro.php",
 				  data: {action: "save", field: $('#proyecto').serialize()},
+				  dataType: 'json',
+				  success: function(resp){
+					  if(resp.mensajes.length > 0)
+					  {
+					       showMessages(resp.mensajes, $("#mensajes"));
+					  }
+				  }
+				});
+            });
+			
+			$("#btnGuardarDep").click(function(){
+				$.ajax({
+				  type: "POST",
+				  url: "registro.php",
+				  data: {action: "saveDep", field: $('#proyecto').serialize()},
 				  dataType: 'json',
 				  success: function(resp){
 					  if(resp.mensajes.length > 0)
